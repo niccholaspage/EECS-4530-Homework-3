@@ -1,22 +1,29 @@
 
-import com.jogamp.newt.event.KeyEvent;
-import com.jogamp.newt.event.KeyListener;
-import com.jogamp.newt.event.WindowAdapter;
-import com.jogamp.newt.event.WindowEvent;
+import com.jogamp.newt.event.*;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.*;
+import com.jogamp.opengl.math.FloatUtil;
 import com.jogamp.opengl.util.Animator;
 import com.jogamp.opengl.util.GLBuffers;
+import com.jogamp.opengl.util.PMVMatrix;
 import com.jogamp.opengl.util.glsl.ShaderCode;
 import com.jogamp.opengl.util.glsl.ShaderProgram;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 import static com.jogamp.opengl.GL.*;
+import static com.jogamp.opengl.GL.GL_FLOAT;
+import static com.jogamp.opengl.GL.GL_TRIANGLES;
+import static com.jogamp.opengl.GL.GL_UNSIGNED_SHORT;
 import static com.jogamp.opengl.GL2ES2.GL_DEBUG_SEVERITY_HIGH;
 import static com.jogamp.opengl.GL2ES2.GL_DEBUG_SEVERITY_MEDIUM;
 import static com.jogamp.opengl.GL2ES3.*;
+import static com.jogamp.opengl.GL2ES3.GL_UNIFORM_BUFFER;
+import static com.jogamp.opengl.GL4.GL_MAP_COHERENT_BIT;
+import static com.jogamp.opengl.GL4.GL_MAP_PERSISTENT_BIT;
 
 /**
  *
@@ -25,8 +32,8 @@ import static com.jogamp.opengl.GL2ES3.*;
 /**
  * @author Jerry Heuring
  *
- *Wrapped the entire class in OpenGLTest.  This made it easier to work with in 
- *my environment.  I don't like having more than one class in a file and may 
+ *Wrapped the entire class in OpenGLTest.  This made it easier to work with in
+ *my environment.  I don't like having more than one class in a file and may
  *try to split this.
  */
 public class OpenGLTest {
@@ -47,7 +54,7 @@ public class OpenGLTest {
      * reorganized the remaining code to more closely align with the C/C++
      * version of the initial program.
      */
-    public static class HelloTriangleSimple implements GLEventListener, KeyListener {
+    public class HelloTriangleSimple implements GLEventListener, KeyListener {
 
         private GLWindow window;
         private Animator animator;
@@ -86,6 +93,7 @@ public class OpenGLTest {
         private IntBuffer vertexArrayName = GLBuffers.newDirectIntBuffer(1);
         private Program program;
         private long start;
+        private PMVMatrix rotation = new PMVMatrix();
 
         private void setup() {
 
@@ -123,6 +131,7 @@ public class OpenGLTest {
 
             initDebug(gl);
             program = new Program(gl, "src/", "passthrough", "passthrough");
+            rotation.glLoadIdentity();
             buildObjects(gl);
 
             gl.glEnable(GL_DEPTH_TEST);
@@ -191,7 +200,9 @@ public class OpenGLTest {
             gl.glUseProgram(program.name);
             gl.glBindVertexArray(vertexArrayName.get(0));
             gl.glBindBuffer(GL_ARRAY_BUFFER, bufferName.get(0));
-            gl.glDrawArrays(GL_TRIANGLES, 0, vertices.length);
+            int modelMatrixLocation = gl.glGetUniformLocation(program.name, "modelingMatrix");
+            gl.glUniformMatrix4fv(modelMatrixLocation, 1, false, rotation.glGetMatrixf());
+            gl.glDrawArrays(GL_TRIANGLES, 0, vertices.length / 4);
         }
 
         @Override
@@ -232,6 +243,16 @@ public class OpenGLTest {
                 new Thread(() -> {
                     window.destroy();
                 }).start();
+            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                rotation.glRotatef(10.0f, 0.0f, 1.0f, 0.0f);
+            } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                rotation.glRotatef(-10.0f, 0.0f, 1.0f, 0.0f);
+            } else if (e.getKeyCode() == KeyEvent.VK_UP) {
+                // Added up and down rotation so that I could make sure the
+                // base of the pyramid was rendering correctly.
+                rotation.glRotatef(10.0f, 1.0f, 0.0f, 0.0f);
+            } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                rotation.glRotatef(-10.0f, 1.0f, 0.0f, 0.0f);
             }
         }
 
@@ -338,7 +359,7 @@ public class OpenGLTest {
     public static void main(String[] args) {
         // TODO Auto-generated method stub
         OpenGLTest myInstance = new OpenGLTest();
-        HelloTriangleSimple example = new HelloTriangleSimple();
+        HelloTriangleSimple example = myInstance.new HelloTriangleSimple();
         example.main(args);
     }
 
