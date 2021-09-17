@@ -26,7 +26,11 @@ import static com.jogamp.opengl.GL4.GL_MAP_COHERENT_BIT;
 import static com.jogamp.opengl.GL4.GL_MAP_PERSISTENT_BIT;
 
 /**
- *
+ * @author Nicholas Nassar
+ * A simple OpenGL application rendering a pyramid. You can rotate
+ * the pyramid by holding the arrow keys. You can also press ESCAPE
+ * to exist. For rotation to work, make sure you use the passthrough.frag
+ * and passthrough.vert file from the add rotation example.
  */
 
 /**
